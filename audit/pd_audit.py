@@ -83,9 +83,10 @@ class Recorder:
     def on_diff_step(self, x):
         if self.block_info is None:
             return
-        row = [int((x[0, s:e] == MASK_TOKEN_ID).sum().item())
-               for s, e, _ in self.block_info]
-        self.traj.append(row)
+        # one device->host sync per step, not one per block
+        counts = torch.stack([(x[0, s:e] == MASK_TOKEN_ID).sum()
+                              for s, e, _ in self.block_info])
+        self.traj.append([int(v) for v in counts.tolist()])
 
     def close_round(self):
         if self.rounds and self.traj:
@@ -192,6 +193,10 @@ def main():
     p.add_argument("--start", type=int, default=0)
     p.add_argument("--max_length", type=int, default=1024)
     p.add_argument("--steps_ratio", type=float, default=1.0)
+    p.add_argument("--confidence_threshold", type=float, default=None,
+                   help="Switch the diffusion alg to pd_confidence_threshold. Unlike "
+                        "pd_entropy this makes per-span work data-dependent, so spans "
+                        "can retire at different steps (full mode only).")
     p.add_argument("--temperature", type=float, default=0.2)
     p.add_argument("--top_p", type=float, default=0.95)
     p.add_argument("--random_seed", type=int, default=42)
@@ -257,7 +262,10 @@ def main():
                     hook = lambda step, x, logits: (rec.on_diff_step(x), x)[1]
                     out = model.planned_diffusion_generate(
                         inputs, max_length=args.max_length, steps_ratio=args.steps_ratio,
-                        return_dict_in_generate=True, alg="pd_entropy",
+                        return_dict_in_generate=True,
+                        alg=("pd_confidence_threshold" if args.confidence_threshold is not None
+                             else "pd_entropy"),
+                        threshold=args.confidence_threshold,
                         temperature=args.temperature, top_p=args.top_p, alg_temp=0.,
                         length_scale=args.length_scale,
                         generation_tokens_hook_func=hook,
@@ -279,6 +287,7 @@ def main():
             "rounds": rec.rounds,
             "length_scale": args.length_scale,
             "steps_ratio": args.steps_ratio,
+            "confidence_threshold": args.confidence_threshold,
             "mode": args.mode,
             **meta,
         }

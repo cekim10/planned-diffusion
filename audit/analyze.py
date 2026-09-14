@@ -46,9 +46,15 @@ def q(a, p):
 
 
 def falsification_check(rows):
-    """Fact 2: under lockstep, every block hits zero masks at the same step."""
+    """Per-block finish steps from the logged mask trajectories.
+
+    Under alg=pd_entropy the join is lockstep by construction, so every block must
+    reach zero masks on the same step; any early retirement voids the preregistration.
+    Under alg=pd_confidence_threshold per-span work is data-dependent, so early
+    retirement is EXPECTED and its spread is the measured (not derived) join waste.
+    """
     checked = early = 0
-    details = []
+    details, measured = [], []
     for r in rows:
         for rd in r.get("rounds", []):
             traj = rd.get("mask_trajectory")
@@ -60,10 +66,13 @@ def falsification_check(rows):
                 z = np.flatnonzero(T[:, b] == 0)
                 finish.append(int(z[0]) if z.size else T.shape[0] - 1)
             checked += 1
+            f = np.array(finish, dtype=float) + 1.0     # steps are 0-indexed
+            if f.max() > 0:
+                measured.append(1.0 - f.mean() / f.max())
             if len(set(finish)) > 1:
                 early += 1
                 details.append((r["request_id"], rd["span_lengths"], finish))
-    return checked, early, details[:5]
+    return checked, early, details[:5], np.array(measured)
 
 
 def main():
@@ -128,12 +137,24 @@ def main():
         bar = "#" * int(60 * h[i] / max(h.max(), 1))
         print(f"  [{edges[i]:.1f},{edges[i+1]:.1f})  {h[i]:>5}  {bar}")
 
-    ck, early, det = falsification_check(rows)
+    ck, early, det, meas = falsification_check(rows)
     if ck:
-        print(f"\nlockstep falsification: {ck} fork-join rounds with >=2 spans checked, "
-              f"{early} had a span retire early")
+        ct = rows[0].get("confidence_threshold")
+        alg = "pd_confidence_threshold" if ct is not None else "pd_entropy"
+        print(f"\nper-span finish steps ({ck} fork-join rounds with >=2 spans, alg={alg}):")
+        print(f"  rounds where a span retired early: {early}/{ck}")
         for d in det:
             print(f"   req {d[0]} lengths={d[1]} finish_steps={d[2]}")
+        if ct is None:
+            print("  interpretation: alg=pd_entropy is lockstep by construction, so this")
+            print("                  MUST be 0/N. Anything else voids the preregistration.")
+        else:
+            print(f"  measured join_waste (1 - mean(finish)/max(finish)):")
+            print(f"     median={np.median(meas):.3f}  p25={q(meas,25):.3f}  "
+                  f"p75={q(meas,75):.3f}  mean={meas.mean():.3f}")
+            print("  interpretation: under pd_confidence_threshold per-span work is")
+            print("                  data-dependent, so early retirement is expected and")
+            print("                  this spread is MEASURED, not derived from lengths.")
 
     # --- preregistered decision rule ---
     print("\n--- preregistered decision rule ---")

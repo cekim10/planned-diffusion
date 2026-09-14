@@ -84,6 +84,29 @@ Look for the line `lockstep falsification: N rounds ... M had a span retire earl
 **M must be 0.** If M > 0, the plan-derived `join_waste` is wrong and the
 preregistration is void — report that and stop.
 
+## 5b. SECOND AXIS — confidence-threshold decoding (20 prompts)
+
+`block_unmask_confidence_threshold` (`dream/pd_utils.py`) keeps **per-block** state
+(`left_tokens_last_step_per_block`) and defers low-confidence tokens block by block,
+extending `steps` to cover the slowest one. So unlike `pd_entropy`, per-span work is
+**data-dependent** and spans genuinely retire at different steps.
+
+```bash
+python audit/pd_audit.py --mode full --num_samples 20 --confidence_threshold 0.9 \
+  --out audit/results/full_ct20.jsonl
+python audit/analyze.py audit/results/full_ct20.jsonl --label "confidence threshold 0.9"
+```
+
+Here early retirement is **expected**, and `analyze.py` reports a *measured*
+join waste from the observed finish steps rather than one derived from lengths.
+This is the evidence that span work is not predictable from the declared `l_k`,
+which is a different claim from step 4 and a stronger one.
+
+> Expect this to be **much slower per prompt** than `pd_entropy`:
+> `block_unmask_confidence_threshold` has a Python loop over the selected tokens
+> with a `selected_confidence[k] < threshold` test, i.e. a device->host sync per
+> candidate token per block per step. Start with 20 prompts and measure.
+
 ## 6. Sensitivity — `length_scale` (report only, never primary)
 
 ```bash
@@ -121,11 +144,44 @@ Span lengths should match the first 50 rows of the primary run. `use_cache`
 routes to a *different mixin class* (`DreamGenerationMixinWithCache`) with a
 different `_ar_sample` signature, so this is worth confirming rather than assuming.
 
+## Expected runtime
+
+No GPU numbers are measured yet — these are derived from the execution structure,
+so treat them as an order of magnitude and let the smoke test replace them.
+
+At batch 1 and these sequence lengths (~100-300 tokens) every forward pass is
+**memory-bound**, not compute-bound: it streams all ~14 GB of bf16 weights.
+On an A100-80GB (~1.9 TB/s, ~80% achieved) that is a ~9 ms floor per forward;
+with kernel-launch and Python overhead, call it **10-20 ms per forward**.
+H100 is roughly 1.7x faster. Sequence length barely matters here.
+
+| step | forwards per prompt | per prompt | total |
+|---|---|---|---|
+| 3. plan, 805 prompts | `T` = plan tokens, ~30-80 | 0.3-1.6 s | **5-20 min** |
+| 5. full, 30 prompts | `T` + `steps` (= `max_k l_k * steps_ratio`, ~30-100) | 0.6-3.6 s | **~2 min** |
+| 5b. full + CT, 20 prompts | same, but sync-bound (see warning above) | unknown, likely 10x | **measure first** |
+| 6. sensitivity, 3 x 200 | as step 3 | | **5-15 min** |
+| 7. use_cache, 50 | as step 3 | | **~1 min** |
+
+Plus a one-off ~15 GB model download and ~1-2 min load per process.
+
+Two things dominate the uncertainty, and both are visible from the smoke test,
+which prints per-prompt wall time (`2.1s (plan 2.1s)`):
+- **`T`, the plan length.** Unknown until measured. Multiply the smoke test's
+  `plan` time by 805 for step 3.
+- **`max_k l_k`**, which sets `steps` and therefore all of step 5.
+
+Worst case per prompt: if a plan never emits `<sync>`/`<|im_end|>`, `_ar_sample`
+runs to `max_length=1024`, and because it is not KV-cached its cost is quadratic
+in `T` — roughly 10-20 s for that one prompt. Bounded, but watch for
+`status: ar_hit_max_length` rows in the output.
+
 ## What to send back
 
 - `audit/results/*.jsonl`
 - the stdout of every `analyze.py` invocation
 - the `VERDICT` line from step 4
+- the early-retirement counts from steps 5 (must be 0) and 5b (expected > 0)
 
 ## Implementation notes (why the instrumentation looks the way it does)
 
