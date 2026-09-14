@@ -23,7 +23,19 @@ pip install -U pip && pip install -r requirements.txt
 `tatsu-lab/alpaca_eval`'s `alpaca_eval.json` directly, so the script-based-dataset
 breakage on `datasets>=4` cannot bite you.
 
-## 2. Smoke test (3 prompts, ~1 min)
+## 2. One-shot gating run (recommended)
+
+Stages 2-5 in order, with logs, stopping if the smoke test fails:
+
+```bash
+PY=python bash audit/run_round0.sh
+```
+
+Everything it runs must pass **before** a second workload (e.g. SGLang `fork`) is
+worth starting. Override with `N_PRIMARY=50` for a quick pass or `N_FALSIFY=10`.
+The individual stages are documented below.
+
+## 2b. Smoke test (3 prompts, ~1 min)
 
 ```bash
 python audit/pd_audit.py --mode plan --num_samples 3 --out audit/results/smoke.jsonl
