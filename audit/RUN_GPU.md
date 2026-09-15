@@ -14,10 +14,30 @@ git clone <your-fork-url> planned-diffusion && cd planned-diffusion
 
 ## 1. Environment
 
+The README uses conda; plain `venv` works too and is what the commands below use.
+
 ```bash
-conda create -y -n pd-env python=3.10 && conda activate pd-env
-pip install -U pip && pip install -r requirements.txt
+python3 --version                 # repo targets 3.10; torch 2.7.1 covers 3.9-3.13
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -U pip wheel
+pip install -r requirements.txt
 ```
+
+If `python3 -m venv` fails with an `ensurepip` error (Debian/Ubuntu ships venv
+separately): `sudo apt install -y python3-venv`. Without sudo, `pip install --user
+virtualenv && python3 -m virtualenv .venv` does the same job.
+
+Check the GPU is visible before running anything:
+
+```bash
+nvidia-smi
+python -c "import torch;print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0))"
+```
+
+`requirements.txt` pins the repo's exact environment, which is what a
+preregistered audit wants. If its CUDA wheel pins fight your driver, the audit
+itself only needs: `torch transformers==4.49.0 huggingface_hub numpy safetensors`.
 
 `audit/pd_audit.py` does **not** import `datasets` — it reads
 `tatsu-lab/alpaca_eval`'s `alpaca_eval.json` directly, so the script-based-dataset
@@ -28,8 +48,11 @@ breakage on `datasets>=4` cannot bite you.
 Stages 2-5 in order, with logs, stopping if the smoke test fails:
 
 ```bash
-PY=python bash audit/run_round0.sh
+source .venv/bin/activate
+bash audit/run_round0.sh
 ```
+
+(or without activating: `PY=.venv/bin/python bash audit/run_round0.sh`)
 
 Everything it runs must pass **before** a second workload (e.g. SGLang `fork`) is
 worth starting. Override with `N_PRIMARY=50` for a quick pass or `N_FALSIFY=10`.
