@@ -127,9 +127,11 @@ python audit/pd_audit.py \
 python audit/analyze.py audit/results/full_30.jsonl --label "full generation"
 ```
 
-Look for the line `lockstep falsification: N rounds ... M had a span retire early`.
-**M must be 0.** If M > 0, the plan-derived `join_waste` is wrong and the
-preregistration is void — report that and stop.
+Look for `plan-derived join_waste is VALID/INVALID`. It is VALID iff every span's
+`finish_step == l_k` (AMENDMENT 1 in PREREGISTRATION.md: with `steps_ratio=1`
+each block unmasks one token per step and finishes at its declared length; the
+region runs to `max_k l_k` and finished spans stay resident). If INVALID, the
+length-derived metric does not describe the run — report that and stop.
 
 ## 5b. SECOND AXIS — confidence-threshold decoding (20 prompts)
 
@@ -228,7 +230,7 @@ in `T` — roughly 10-20 s for that one prompt. Bounded, but watch for
 - `audit/results/*.jsonl`
 - the stdout of every `analyze.py` invocation
 - the `VERDICT` line from step 4
-- the early-retirement counts from steps 5 (must be 0) and 5b (expected > 0)
+- the `VALID/INVALID` line from step 5, and the measured spread from 5b
 
 ## Implementation notes (why the instrumentation looks the way it does)
 

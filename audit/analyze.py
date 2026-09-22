@@ -65,13 +65,16 @@ def q(a, p):
 def falsification_check(rows):
     """Per-block finish steps from the logged mask trajectories.
 
-    Under alg=pd_entropy the join is lockstep by construction, so every block must
-    reach zero masks on the same step; any early retirement voids the preregistration.
-    Under alg=pd_confidence_threshold per-span work is data-dependent, so early
-    retirement is EXPECTED and its spread is the measured (not derived) join waste.
+    AMENDMENT 1: under alg=pd_entropy with steps_ratio=1 each block unmasks one
+    token per step (the max(1, ...) floor in block_unmask), so a span finishes at
+    step == its declared length l_k while the region runs to max_k l_k. The
+    plan-derived join_waste is valid iff finish_step_k == l_k for every span;
+    that equality is what this check now tests. Under pd_confidence_threshold
+    per-span work is data-dependent, so finish steps deviate from l_k and their
+    spread is the measured (not derived) join waste.
     """
-    checked = early = 0
-    details, measured = [], []
+    checked = deviating = 0
+    details, measured, devs = [], [], []
     for r in rows:
         for rd in r.get("rounds", []):
             traj = rd.get("mask_trajectory")
@@ -83,13 +86,15 @@ def falsification_check(rows):
                 z = np.flatnonzero(T[:, b] == 0)
                 finish.append(int(z[0]) if z.size else T.shape[0] - 1)
             checked += 1
-            f = np.array(finish, dtype=float) + 1.0     # steps are 0-indexed
+            f = np.array(finish, dtype=float)
             if f.max() > 0:
                 measured.append(1.0 - f.mean() / f.max())
-            if len(set(finish)) > 1:
-                early += 1
+            d = f - np.array(rd["span_lengths"], dtype=float)
+            devs.extend(d.tolist())
+            if np.any(d != 0):
+                deviating += 1
                 details.append((r["request_id"], rd["span_lengths"], finish))
-    return checked, early, details[:5], np.array(measured)
+    return checked, deviating, details[:5], np.array(measured), np.array(devs)
 
 
 def main():
@@ -167,24 +172,32 @@ def main():
         bar = "#" * int(60 * h[i] / max(h.max(), 1))
         print(f"  [{edges[i]:.1f},{edges[i+1]:.1f})  {h[i]:>5}  {bar}")
 
-    ck, early, det, meas = falsification_check(rows)
+    ck, dev_rounds, det, meas, devs = falsification_check(rows)
     if ck:
         ct = rows[0].get("confidence_threshold")
+        sr = rows[0].get("steps_ratio", 1.0)
         alg = "pd_confidence_threshold" if ct is not None else "pd_entropy"
-        print(f"\nper-span finish steps ({ck} fork-join rounds with >=2 spans, alg={alg}):")
-        print(f"  rounds where a span retired early: {early}/{ck}")
+        print(f"\nper-span finish steps ({ck} fork-join rounds with >=2 spans, alg={alg}, steps_ratio={sr}):")
+        print(f"  spans checked                    : {len(devs)}")
+        print(f"  finish_step - l_k                : min={devs.min():+.0f} max={devs.max():+.0f} "
+              f"nonzero={int((devs != 0).sum())}/{len(devs)}")
+        print(f"  rounds with any span off l_k     : {dev_rounds}/{ck}")
         for d in det:
             print(f"   req {d[0]} lengths={d[1]} finish_steps={d[2]}")
+        if meas.size:
+            print(f"  measured join_waste 1-mean(finish)/max(finish): median={np.median(meas):.3f}  "
+                  f"p25={q(meas,25):.3f}  p75={q(meas,75):.3f}")
         if ct is None:
-            print("  interpretation: alg=pd_entropy is lockstep by construction, so this")
-            print("                  MUST be 0/N. Anything else voids the preregistration.")
+            if sr == 1.0:
+                verdict = "VALID" if dev_rounds == 0 else "INVALID"
+                print(f"  plan-derived join_waste is {verdict}: requires finish_step_k == l_k for every span")
+                if dev_rounds:
+                    print("  -> the length-derived metric does not describe this run; do not use the VERDICT below")
+            else:
+                print("  steps_ratio != 1: finish_step == l_k is not expected; compare measured vs derived above")
         else:
-            print(f"  measured join_waste (1 - mean(finish)/max(finish)):")
-            print(f"     median={np.median(meas):.3f}  p25={q(meas,25):.3f}  "
-                  f"p75={q(meas,75):.3f}  mean={meas.mean():.3f}")
-            print("  interpretation: under pd_confidence_threshold per-span work is")
-            print("                  data-dependent, so early retirement is expected and")
-            print("                  this spread is MEASURED, not derived from lengths.")
+            print("  pd_confidence_threshold: deviation from l_k is the point. The measured")
+            print("  spread above is the data-dependent (second-axis) heterogeneity.")
 
     # --- preregistered decision rule ---
     print("\n--- preregistered decision rule ---")
