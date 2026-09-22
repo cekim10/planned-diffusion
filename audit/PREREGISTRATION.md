@@ -143,3 +143,8 @@ now a direct measurement rather than a derivation.
 `W_agg = 0.399` is reported as descriptive only; the rule uses the median and
 the verdict is GRAY, not GO. Per the rule, GRAY means a second workload is
 required before proceeding — it does not by itself justify a simulator.
+
+*Correction (Round 1, 2026-09-21):* `W_agg = 0.399` is inflated by the two
+degenerate plans (0.260 without them) and is in unmask-slot units, which do not
+map to GPU time; the compute-unit figure is 0.177. See `PREREGISTRATION_R1.md`
+and `results/README.md`. The verdict above is unaffected.

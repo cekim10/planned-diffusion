@@ -1,0 +1,69 @@
+
+=== Round 1 compaction headroom  [NVIDIA L40S] ===
+fwd(L) curve: 16 points, L=72..4028
+  floor ms(L=72)      : 27.81 ms
+  thr_sat                     : 10,962 tok/s   L_sat (>=0.9 thr_sat): 508
+  linear above L_sat (n=8): R2=0.9983  intercept/ms(L_sat)=-0.12  slope=99.7 us/tok
+  curve linear per rule       : YES
+       L        ms      tok/s
+      72     27.81       2589
+      96     28.44       3375
+     148     31.88       4643
+     148     31.89       4641
+     188     32.65       5757
+     268     36.35       7372
+     308     37.82       8143
+     388     47.61       8149
+     508     51.17       9927
+     628     57.29      10962
+     788     75.16      10485
+    1028     95.77      10734
+    1548    142.28      10880
+    2068    193.69      10677
+    3068    296.24      10356
+    4028    402.63      10004
+
+replaying round-1 plans: primary n=802 (k<=50), all n=804
+
+--- prefix CACHED, k<=50  (PRIMARY) ---
+                       total     rel
+  T_current         1309.1 s  100.0%
+  T_compact         1251.2 s   95.6%
+  T_packedCB         600.9 s   45.9%
+  T_ideal            494.7 s   37.8%
+  S_compact = 1 - T_compact/T_current : 0.044   (per-request median 0.000, p75 0.031, p90 0.070)
+  H         = 1 - T_ideal/T_packedCB  : 0.177
+  split: share of (current -> ideal) gap captured by retirement alone: 0.07
+
+--- prefix UNCACHED, k<=50  (repo default path) ---
+                       total     rel
+  T_current         1452.5 s  100.0%
+  T_compact         1384.3 s   95.3%
+  T_packedCB         871.3 s   60.0%
+  T_ideal            765.1 s   52.7%
+  S_compact = 1 - T_compact/T_current : 0.047   (per-request median 0.014, p75 0.033, p90 0.067)
+  H         = 1 - T_ideal/T_packedCB  : 0.122
+  split: share of (current -> ideal) gap captured by retirement alone: 0.10
+
+--- prefix CACHED, ALL plans incl. degenerate  (secondary) ---
+                       total     rel
+  T_current        13201.1 s  100.0%
+  T_compact         9460.3 s   71.7%
+  T_packedCB       10461.2 s   79.2%
+  T_ideal           7323.1 s   55.5%
+  S_compact = 1 - T_compact/T_current : 0.283   (per-request median 0.000, p75 0.031, p90 0.071)
+  H         = 1 - T_ideal/T_packedCB  : 0.300
+  split: share of (current -> ideal) gap captured by retirement alone: 0.64
+
+calibration vs measured diffusion latency (uncached, clean single-round eos requests, n=11):
+  measured/predicted: median=1.09  p10=1.05  p90=1.19
+    req 2    S=70   L=636   measured=  4.86s predicted=  4.07s  x1.19
+    req 3    S=40   L=177   measured=  1.42s predicted=  1.30s  x1.09
+    req 5    S=70   L=474   measured=  4.14s predicted=  3.51s  x1.18
+    req 7    S=100  L=708   measured=  8.46s predicted=  6.62s  x1.28
+  (>1 expected: measured includes per-step sampling/block_unmask/hook overhead)
+
+--- preregistered decision rule (prefix cached, k<=50) ---
+S_compact = 0.044   H = 0.177   curve_linear = True
+VERDICT: GRAY
+

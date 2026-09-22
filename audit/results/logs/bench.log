@@ -1,0 +1,24 @@
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:00<00:00,  6.04it/s]Loading checkpoint shards:  50%|█████     | 2/4 [00:00<00:00,  6.58it/s]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:00<00:00,  6.83it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00,  7.06it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00,  6.87it/s]
+/home/ckim151/planned-diffusion/.venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:629: UserWarning: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`. This was detected when initializing the generation config instance, which means the corresponding file may hold incorrect parameterization and should be fixed.
+  warnings.warn(
+/home/ckim151/planned-diffusion/.venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:629: UserWarning: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+  warnings.warn(
+[bench] NVIDIA L40S  torch 2.7.1+cu126  dtype torch.bfloat16  prefix=60 spans=4
+  L=   72  blocks=[10]    27.81 ms  (p10 27.78 / p90 27.85)       2589 tok/s
+  L=   96  blocks=[10, 10, 10]    28.44 ms  (p10 28.43 / p90 28.46)       3375 tok/s
+  L=  148  blocks=[20, 20, 20, 20]    31.88 ms  (p10 31.84 / p90 31.90)       4643 tok/s
+  L=  148  blocks=[20, 20, 20, 20]    31.89 ms  (p10 31.87 / p90 31.93)       4641 tok/s
+  L=  188  blocks=[30, 30, 30, 30]    32.65 ms  (p10 32.63 / p90 32.71)       5757 tok/s
+  L=  268  blocks=[50, 50, 50, 50]    36.35 ms  (p10 36.25 / p90 36.46)       7372 tok/s
+  L=  308  blocks=[60, 60, 60, 60]    37.82 ms  (p10 37.74 / p90 38.11)       8143 tok/s
+  L=  388  blocks=[80, 80, 80, 80]    47.61 ms  (p10 47.47 / p90 47.85)       8149 tok/s
+  L=  508  blocks=[110, 110, 110, 110]    51.17 ms  (p10 50.93 / p90 51.46)       9927 tok/s
+  L=  628  blocks=[140, 140, 140, 140]    57.29 ms  (p10 57.13 / p90 57.88)      10962 tok/s
+  L=  788  blocks=[180, 180, 180, 180]    75.16 ms  (p10 74.75 / p90 75.84)      10485 tok/s
+  L= 1028  blocks=[240, 240, 240, 240]    95.77 ms  (p10 94.91 / p90 97.29)      10734 tok/s
+  L= 1548  blocks=[370, 370, 370, 370]   142.28 ms  (p10 141.85 / p90 143.66)      10880 tok/s
+  L= 2068  blocks=[500, 500, 500, 500]   193.69 ms  (p10 192.76 / p90 195.29)      10677 tok/s
+  L= 3068  blocks=[750, 750, 750, 750]   296.24 ms  (p10 291.81 / p90 298.31)      10356 tok/s
+  L= 4028  blocks=[990, 990, 990, 990]   402.63 ms  (p10 400.70 / p90 404.99)      10004 tok/s
+[bench] wrote audit/results/fwd_curve.json

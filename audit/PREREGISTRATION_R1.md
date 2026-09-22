@@ -123,3 +123,46 @@ small (memory-bound regime), and the case, if any, will rest on `H`.
 - Multi-round requests (60% of plans end in `<sync>`) are **not** replayed here
   — only round 1 is available for all 804. This understates every `T`; it does
   not bias the ratios in an obvious direction and is left for Round 2.
+
+---
+
+## RESULT — 2026-09-21, rule applied as written
+
+Hardware: NVIDIA L40S. Curve: floor 27.8 ms at L=72; peak 10,962 tok/s at
+L≈628; linear above `L_sat=508` (R²=0.998, ~100 µs/token); 91% of peak at
+L=4028 (dense-mask attention). Calibration on 11 clean single-round requests:
+measured/predicted median 1.09 (p10 1.05, p90 1.19).
+
+Primary (prefix cached, k≤50, n=802): `S_compact = 0.044`, `H = 0.177`,
+`split = 0.07`, curve linear. Uncached: 0.047 / 0.122. All 804 incl. degenerate:
+0.283 / 0.300 (dominated by two plans, as anticipated pre-data).
+
+**VERDICT: GRAY.** Neither GO row was met; the STOP row (`S_compact<0.05` **and**
+`H<0.10`) was not met either because `H=0.177`.
+
+Stated-in-advance expectation confirmed: `S_compact` small, case rests on `H`.
+`H` came in 2.3 points under the GO line.
+
+### What this settles
+
+- Span retirement alone is not a latency feature for this model on this class of
+  GPU. Per-request median saving is zero.
+- Of the 62% gap between the repo today and perfect span-level packing, 93% is
+  recovered by request-level continuous batching that already exists elsewhere.
+  Span-level scheduling is a ~18% (all) to ~21% (forked-only) increment on top.
+- Round 0's descriptive `W_agg=0.399` overstated the headroom; the compute-unit
+  figure on the non-degenerate plans is 0.177. See `results/README.md`.
+
+### What it does not settle
+
+- Multi-round requests (16/30) were not replayed; each round is its own
+  fork-join and the per-round `H` should be similar, but `T` totals are
+  understated.
+- `pd_confidence_threshold` (Round 0 step 5b) has not been run. `H` here is
+  static — fixed by the plan. If retirement points become data-dependent under
+  CT, the value of *dynamic* span scheduling is not captured by `H` at all.
+  That is the one measurement inside this repo that could change the character
+  of the result rather than its magnitude.
+- L40S specifics: `H` is a ratio at saturation and is GPU-independent; the
+  floor and `L_sat` move with memory bandwidth, so `S_compact` would be a few
+  points higher on an A100/H100 but the regime is the same.

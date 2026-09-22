@@ -20,7 +20,7 @@ Produced by `audit/run_round0.sh` on the GPU box; synced back unmodified.
 - sampling: `temperature=0.2`, `top_p=0.95`, `max_length=1024`, `steps_ratio=1.0`,
   seed 42 re-set per prompt
 - device: `cuda` (GPU model not recorded by the script — fill in below)
-- GPU: __________  driver/CUDA: __________  torch: __________
+- GPU: NVIDIA L40S (48 GB GDDR6; from `fwd_curve.json`)  torch: see `fwd_curve.json`  python 3.12 venv
 
 ## Headline (preregistered rule, unchanged)
 
@@ -50,3 +50,54 @@ comparison built on the default path will be dominated by it unless guarded.
 
 **Consequence for `total_tokens`.** It counts the runaway AR tokens, so it cannot
 be used to recover the prefix length; Round 1 takes `P` from the plan-mode row.
+
+## Round 1 — compaction headroom (preregistered rule in `../PREREGISTRATION_R1.md`)
+
+Files: `fwd_curve.json` (forward latency at L=72..4028, real PD masks, L40S),
+`analysis_round1.txt` (replay of the 802 primary plans), `logs/bench.log`.
+
+**Calibration:** predicted vs measured diffusion latency on the 11 clean
+single-round requests: median **1.09** (p10 1.05, p90 1.19). The cost model is
+good to ~10%; the replay can be trusted.
+
+| prefix cached, k≤50 (primary) | total | rel |
+|---|---|---|
+| `T_current` (repo, 1 request) | 1309 s | 100% |
+| `T_compact` (retire spans) | 1251 s | 95.6% |
+| `T_packedCB` (perfect request-level packing) | 601 s | 45.9% |
+| `T_ideal` (perfect span-level packing) | 495 s | 37.8% |
+
+`S_compact = 0.044` (per-request median 0.000, p90 0.070) — **latency claim dead**:
+at L median 147 the L40S is memory-bound (floor 27.8 ms, saturation ~L 600), so
+removing finished spans barely changes per-step time and the step count is unchanged.
+
+`H = 0.177` — span-level packing beats perfect request-level packing by 17.7%.
+Below the 0.20 GO line. Conditional on `k≥2`: 0.195; `k≥3`: 0.207; `k≥5`: 0.211.
+
+`split = 0.07` — of the current→ideal gap, retirement captures 7%; request-level
+batching captures 93%. **The dominant inefficiency in serving this model today is
+the absence of request-level batching, not span scheduling.** A single PD request
+runs at 42% of peak throughput.
+
+**VERDICT: GRAY** (both axes below GO).
+
+### Correction to Round 0's descriptive `W_agg = 0.399`
+
+That number was labeled descriptive-only and the Round 0 rule used the median, so
+no verdict changes — but it was wrong as a statement about GPU time, twice over:
+
+| | slot-step unit (Round 0) | compute unit (Round 1) |
+|---|---|---|
+| all 804 | **0.399** | 0.300 |
+| k ≤ 50 (802) | 0.260 | **0.177** |
+
+1. The two repetition-loop plans (k=101, 112; 900-token blocks) inflate the
+   aggregate by ~14 points.
+2. The slot-step unit counts one unmask slot per span per step. GPU cost is
+   resident tokens per step: a span of length `l` is resident for `l` steps at
+   `l` tokens each (`l²`). Long spans, which are live longest, also cost most per
+   step, so short-span retirement frees a smaller share of FLOPs than of slots.
+   Example `[30,120,70]`: slot 0.389, compute 0.235.
+
+The structural compute headroom of span-level over request-level packing on
+this workload is **~18% (all requests) to ~21% (forked requests)**, not 40%.
