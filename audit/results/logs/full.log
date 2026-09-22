@@ -1,0 +1,38 @@
+[audit] device=cuda dtype=torch.bfloat16 mode=full length_scale=None
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:00<00:00,  8.99it/s]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:00<00:00, 10.51it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 10.69it/s]
+/home/ckim151/planned-diffusion/.venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:629: UserWarning: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`. This was detected when initializing the generation config instance, which means the corresponding file may hold incorrect parameterization and should be fixed.
+  warnings.warn(
+/home/ckim151/planned-diffusion/.venv/lib/python3.12/site-packages/transformers/generation/configuration_utils.py:629: UserWarning: `do_sample` is set to `False`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+  warnings.warn(
+[audit] 0 already done in audit/results/full_30.jsonl
+[0] ok                 k=1   l=[50] 59.7s (plan 58.1s)
+[1] ok                 k=1   l=[50] 6.5s (plan 1.4s)
+[2] ok                 k=10  l=[40, 50, 30, 50, 70, 70, 50, 50, 40, 50] 6.7s (plan 1.8s)
+[3] ok                 k=4   l=[40, 20, 20, 30] 2.2s (plan 0.8s)
+[4] ok                 k=5   l=[40, 70, 30, 30, 40] 7.7s (plan 2.1s)
+[5] ok                 k=8   l=[30, 60, 40, 70, 70, 50, 40, 20] 5.6s (plan 1.5s)
+[6] ok                 k=3   l=[10, 30, 30] 17.0s (plan 3.9s)
+[7] ok                 k=8   l=[80, 100, 90, 90, 60, 80, 70, 50] 9.8s (plan 1.4s)
+[8] ok                 k=3   l=[10, 40, 20] 1.8s (plan 0.5s)
+[9] ok                 k=4   l=[30, 40, 30, 30] 7.2s (plan 0.9s)
+[10] ok                 k=5   l=[20, 30, 30, 50, 60] 5.8s (plan 1.2s)
+[11] ok                 k=1   l=[20] 6.4s (plan 2.0s)
+[12] ok                 k=2   l=[20, 70] 9.7s (plan 2.7s)
+[13] ok                 k=3   l=[40, 70, 20] 3.1s (plan 0.5s)
+[14] ok                 k=5   l=[30, 20, 40, 50, 30] 2.9s (plan 1.0s)
+[15] ok                 k=1   l=[20] 13.5s (plan 1.9s)
+[16] ok                 k=14  l=[20, 70, 70, 70, 70, 70, 70, 60, 60, 50, 60, 60, 60, 70] 11.6s (plan 3.5s)
+[17] ok                 k=2   l=[30, 20] 5.9s (plan 1.3s)
+[18] ok                 k=3   l=[10, 30, 20] 42.0s (plan 14.3s)
+[19] ok                 k=1   l=[30] 58.1s (plan 57.2s)
+[20] ok                 k=2   l=[40, 10] 11.7s (plan 2.5s)
+[21] ok                 k=1   l=[40] 4.4s (plan 1.2s)
+[22] ok                 k=3   l=[20, 40, 40] 5.3s (plan 1.3s)
+[23] ok                 k=1   l=[100] 10.4s (plan 2.2s)
+[24] ok                 k=2   l=[30, 50] 3.8s (plan 0.5s)
+[25] ok                 k=3   l=[20, 90, 40] 3.9s (plan 0.6s)
+[26] ok                 k=2   l=[50, 20] 1.9s (plan 0.4s)
+[27] ok                 k=4   l=[20, 40, 30, 40] 3.2s (plan 1.0s)
+[28] ok                 k=7   l=[20, 60, 30, 40, 30, 30, 20] 3.8s (plan 1.2s)
+[29] ok                 k=4   l=[20, 80, 30, 20] 3.6s (plan 0.7s)

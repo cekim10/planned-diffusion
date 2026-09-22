@@ -1,0 +1,64 @@
+
+=== Round 0 Workload Existence Audit [PRIMARY: 805 AlpacaEval, default plan] ===
+N evaluated          : 804   (skipped/errored: 1)
+mode / length_scale  : plan / None
+
+metric                    median       p25       p75       p90      mean
+num_spans k                2.000     1.000     4.000     6.000     3.137
+CV_len                     0.177     0.000     0.350     0.538     0.212
+imbalance max/mean         1.200     1.000     1.412     1.667     1.253
+join_waste                 0.167     0.000     0.292     0.400     0.167
+
+k distribution       : k=1:275(34%)  k=2:206(26%)  k=3:110(14%)  k=4:61(8%)  k=5:43(5%)  k=6:37(5%)  k=7:22(3%)  k=8:18(2%)  k=9:11(1%)  k=10:7(1%)  k=11:7(1%)  k=12:1(0%)  k=13:2(0%)  k=14:1(0%)  k=15:1(0%)  k=101:1(0%)  k=112:1(0%)
+fraction k>=2  (F2)  : 0.658
+plan terminator      : eos:320(40%)  sync:484(60%)
+span len quantization: unique lengths seen = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200]
+
+by subset (coverage and per-subset rule inputs):
+  subset             n  /total      F2   median W  median k
+  helpful_base     129     129    0.71      0.214       2.0
+  koala            155     156    0.65      0.167       2.0
+  oasst            188     188    0.64      0.143       2.0
+  selfinstruct     252     252    0.67      0.134       2.0
+  vicuna            80      80    0.62      0.125       2.0
+
+aggregate capacity waste (descriptive, not the rule):
+  sum l_k                  = 203,830 span-tokens
+  sum k*max(l_k) (lockstep)= 339,300 span-token-slots
+  W_agg                    = 0.399
+
+join_waste by k:
+  k=1   n=275   median W=0.000  mean W=0.000
+  k=2   n=206   median W=0.250  mean W=0.234
+  k=3   n=110   median W=0.258  mean W=0.266
+  k=4   n=61    median W=0.250  mean W=0.271
+  k=5   n=43    median W=0.250  mean W=0.245
+  k=6   n=37    median W=0.267  mean W=0.289
+  k=7   n=22    median W=0.265  mean W=0.254
+  k=8   n=18    median W=0.175  mean W=0.188
+  k=9   n=11    median W=0.222  mean W=0.255
+  k=10  n=7     median W=0.286  mean W=0.292
+  k=11  n=7     median W=0.473  mean W=0.412
+  k=12  n=1     median W=0.500  mean W=0.500
+  k=13  n=2     median W=0.340  mean W=0.340
+  k=14  n=1     median W=0.122  mean W=0.122
+  k=15  n=1     median W=0.278  mean W=0.278
+  k=101 n=1     median W=0.504  mean W=0.504
+  k=112 n=1     median W=0.467  mean W=0.467
+
+join_waste histogram:
+  [0.0,0.1)    343  ############################################################
+  [0.1,0.2)    127  ######################
+  [0.2,0.3)    134  #######################
+  [0.3,0.4)    110  ###################
+  [0.4,0.5)     78  #############
+  [0.5,0.6)     11  #
+  [0.6,0.7)      1  
+  [0.7,0.8)      0  
+  [0.8,0.9)      0  
+  [0.9,1.0)      0  
+
+--- preregistered decision rule ---
+F2 = 0.658   W (median join_waste) = 0.167
+VERDICT: GRAY  -- insufficient alone; needs a second workload (0.10 <= W < 0.20)
+

@@ -1,0 +1,57 @@
+
+=== Round 0 Workload Existence Audit [full generation] ===
+N evaluated          : 30   (skipped/errored: 0)
+mode / length_scale  : full / None
+
+metric                    median       p25       p75       p90      mean
+num_spans k                3.000     2.000     4.750     8.000     3.767
+CV_len                     0.291     0.150     0.407     0.559     0.284
+imbalance max/mean         1.345     1.155     1.573     1.723     1.368
+join_waste                 0.255     0.134     0.364     0.419     0.236
+
+k distribution       : k=1:7(23%)  k=2:5(17%)  k=3:6(20%)  k=4:4(13%)  k=5:3(10%)  k=7:1(3%)  k=8:2(7%)  k=10:1(3%)  k=14:1(3%)
+fraction k>=2  (F2)  : 0.767
+span len quantization: unique lengths seen = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+
+aggregate capacity waste (descriptive, not the rule):
+  sum l_k                  = 4,910 span-tokens
+  sum k*max(l_k) (lockstep)= 6,850 span-token-slots
+  W_agg                    = 0.283
+
+join_waste by k:
+  k=1   n=7     median W=0.000  mean W=0.000
+  k=2   n=5     median W=0.300  mean W=0.280
+  k=3   n=6     median W=0.357  mean W=0.327
+  k=4   n=4     median W=0.250  mean W=0.305
+  k=5   n=3     median W=0.367  mean W=0.362
+  k=7   n=1     median W=0.452  mean W=0.452
+  k=8   n=2     median W=0.273  mean W=0.273
+  k=10  n=1     median W=0.286  mean W=0.286
+  k=14  n=1     median W=0.122  mean W=0.122
+
+join_waste histogram:
+  [0.0,0.1)      7  ##############################################
+  [0.1,0.2)      6  ########################################
+  [0.2,0.3)      3  ####################
+  [0.3,0.4)      9  ############################################################
+  [0.4,0.5)      4  ##########################
+  [0.5,0.6)      1  ######
+  [0.6,0.7)      0  
+  [0.7,0.8)      0  
+  [0.8,0.9)      0  
+  [0.9,1.0)      0  
+
+per-span finish steps (49 fork-join rounds with >=2 spans, alg=pd_entropy):
+  rounds where a span retired early: 46/49
+   req 1 lengths=[40, 50, 60, 50, 40, 50, 30] finish_steps=[40, 50, 60, 50, 40, 50, 30]
+   req 2 lengths=[40, 50, 30, 50, 70, 70, 50, 50, 40, 50] finish_steps=[40, 50, 30, 50, 70, 70, 50, 50, 40, 50]
+   req 3 lengths=[40, 20, 20, 30] finish_steps=[40, 20, 20, 30]
+   req 4 lengths=[40, 70, 30, 30, 40] finish_steps=[40, 70, 30, 30, 40]
+   req 4 lengths=[30, 50, 20, 20, 10] finish_steps=[30, 50, 20, 20, 10]
+  interpretation: alg=pd_entropy is lockstep by construction, so this
+                  MUST be 0/N. Anything else voids the preregistration.
+
+--- preregistered decision rule ---
+F2 = 0.767   W (median join_waste) = 0.255
+VERDICT: GO    -- proceed to simulator (W >= 0.20)
+

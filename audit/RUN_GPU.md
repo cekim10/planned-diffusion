@@ -225,12 +225,29 @@ runs to `max_length=1024`, and because it is not KV-cached its cost is quadratic
 in `T` — roughly 10-20 s for that one prompt. Bounded, but watch for
 `status: ar_hit_max_length` rows in the output.
 
+## Round 1 — compaction headroom kill test (~10-20 min)
+
+Runs only after Round 0 results are in `audit/results/`. Rule is fixed in
+`audit/PREREGISTRATION_R1.md`.
+
+```bash
+bash audit/run_round1.sh
+```
+
+Stage 1 times a real forward pass at `L` = 64..4096 with the repo's block-sparse
+PD masks (~5-10 min incl. model load). Stage 2 replays the 804 measured plans
+through that curve and prints `T_current / T_compact / T_packedCB / T_ideal`,
+`S_compact`, `H`, a calibration against Round 0's measured diffusion latencies,
+and the verdict. Shrink the grid with `GRID=64,128,256,512,1024,2048` if short on
+time; the top end matters (it sets `thr_sat`).
+
 ## What to send back
 
 - `audit/results/*.jsonl`
 - the stdout of every `analyze.py` invocation
 - the `VERDICT` line from step 4
 - the `VALID/INVALID` line from step 5, and the measured spread from 5b
+- Round 1: `audit/results/fwd_curve.json` and `analysis_round1.txt`
 
 ## Implementation notes (why the instrumentation looks the way it does)
 
