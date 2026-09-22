@@ -3,6 +3,22 @@ import argparse, json, sys
 import numpy as np
 
 
+# tatsu-lab/alpaca_eval's alpaca_eval.json is stored ORDERED BY SUBSET, in these
+# contiguous blocks. Recorded here so that runs predating the "subset" field (and
+# any contiguous partial run) can still be broken down and checked for bias.
+SUBSET_RANGES = [("helpful_base", 0, 128), ("koala", 129, 284), ("oasst", 285, 472),
+                 ("selfinstruct", 473, 724), ("vicuna", 725, 804)]
+
+
+def subset_of(request_id, explicit=None):
+    if explicit:
+        return explicit
+    for name, a, b in SUBSET_RANGES:
+        if a <= request_id <= b:
+            return name
+    return "?"
+
+
 def load(paths):
     rows = []
     for p in paths:
@@ -27,6 +43,7 @@ def per_request(rows):
         mean, mx = l.mean(), l.max()
         out.append({
             "request_id": r["request_id"],
+            "subset": subset_of(r["request_id"], r.get("subset")),
             "k": int(l.size),
             "lengths": l.tolist(),
             "cv": float(l.std() / mean) if mean > 0 else 0.0,
@@ -113,6 +130,19 @@ def main():
         print(f"plan terminator      : " + "  ".join(
             f"{t}:{terms.count(t)}({terms.count(t)/len(terms):.0%})" for t in sorted(set(terms))))
     print(f"span len quantization: unique lengths seen = {sorted(set(int(x) for r in recs for x in r['lengths']))[:20]}")
+
+    # per-subset breakdown: AlpacaEval is subset-ordered, so this shows both how
+    # complete the run is and whether the headline is driven by one subset.
+    print(f"\nby subset (coverage and per-subset rule inputs):")
+    print(f"  {'subset':<14}{'n':>6}{'/total':>8}{'F2':>8}{'median W':>11}{'median k':>10}")
+    for name, a, b in SUBSET_RANGES:
+        sel = [r for r in recs if r["subset"] == name]
+        if not sel:
+            print(f"  {name:<14}{0:>6}{b-a+1:>8}{'-':>8}{'-':>11}{'-':>10}")
+            continue
+        sk = np.array([r["k"] for r in sel]); sw = np.array([r["join_waste"] for r in sel])
+        print(f"  {name:<14}{len(sel):>6}{b-a+1:>8}{(sk>=2).mean():>8.2f}"
+              f"{np.median(sw):>11.3f}{np.median(sk):>10.1f}")
 
     # --- descriptive only, NOT part of the preregistered rule ---
     tot_useful = sum(r["total_len"] for r in recs)

@@ -11,6 +11,10 @@ mkdir -p "$R" "$L"
 PY=${PY:-python}
 N_PRIMARY=${N_PRIMARY:-}          # empty = all 805
 N_FALSIFY=${N_FALSIFY:-30}
+# AlpacaEval is stored ordered by subset, so a contiguous partial run samples only
+# helpful_base. Spread any partial run across all five subsets instead.
+if [ -n "$N_PRIMARY" ]; then STRIDE=$((805 / N_PRIMARY)); [ "$STRIDE" -lt 1 ] && STRIDE=1; else STRIDE=1; fi
+FALSIFY_STRIDE=$((805 / N_FALSIFY)); [ "$FALSIFY_STRIDE" -lt 1 ] && FALSIFY_STRIDE=1
 
 banner() { printf '\n\033[1m===== %s =====\033[0m\n' "$*"; }
 
@@ -24,7 +28,7 @@ echo "Per-prompt wall time is printed above. Multiply it by 805 to predict stage
 
 banner "1/4  PRIMARY -- AlpacaEval plans, model defaults, no length_scale"
 # shellcheck disable=SC2086
-$PY audit/pd_audit.py --mode plan ${N_PRIMARY:+--num_samples $N_PRIMARY} \
+$PY audit/pd_audit.py --mode plan --stride "$STRIDE" ${N_PRIMARY:+--num_samples $N_PRIMARY} \
   --out "$R/plan_default.jsonl" 2>&1 | tee "$L/plan_default.log" | tail -n 20
 
 banner "2/4  VERDICT"
@@ -32,7 +36,7 @@ $PY audit/analyze.py "$R/plan_default.jsonl" --label "primary (default plan)" \
   2>&1 | tee "$L/verdict.log"
 
 banner "3/4  FALSIFICATION -- is the join really lockstep? (alg=pd_entropy)"
-$PY audit/pd_audit.py --mode full --num_samples "$N_FALSIFY" \
+$PY audit/pd_audit.py --mode full --num_samples "$N_FALSIFY" --stride "$FALSIFY_STRIDE" \
   --out "$R/full_${N_FALSIFY}.jsonl" 2>&1 | tee "$L/full.log" | tail -n 10
 $PY audit/analyze.py "$R/full_${N_FALSIFY}.jsonl" --label "full generation" \
   2>&1 | tee "$L/falsification.log"

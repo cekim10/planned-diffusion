@@ -191,6 +191,13 @@ def main():
     p.add_argument("--mode", choices=["plan", "full"], default="plan")
     p.add_argument("--num_samples", type=int, default=None)
     p.add_argument("--start", type=int, default=0)
+    p.add_argument("--stride", type=int, default=1,
+                   help="Take every Nth prompt. AlpacaEval is stored ORDERED BY SUBSET "
+                        "(helpful_base 0-128, koala 129-284, oasst 285-472, selfinstruct "
+                        "473-724, vicuna 725-804), so any contiguous partial run samples "
+                        "one or two subsets only. Use --stride to sample proportionally "
+                        "across all five, and for multi-GPU shard by "
+                        "--start <rank> --stride <world_size>.")
     p.add_argument("--max_length", type=int, default=1024)
     p.add_argument("--steps_ratio", type=float, default=1.0)
     p.add_argument("--confidence_threshold", type=float, default=None,
@@ -236,10 +243,11 @@ def main():
                     pass
     print(f"[audit] {len(done)} already done in {args.out}", flush=True)
 
-    lo = args.start
-    hi = len(eval_set) if args.num_samples is None else min(len(eval_set), lo + args.num_samples)
+    ids = list(range(args.start, len(eval_set), args.stride))
+    if args.num_samples is not None:
+        ids = ids[:args.num_samples]
 
-    for i in range(lo, hi):
+    for i in ids:
         if i in done:
             continue
         ex = eval_set[i]
@@ -279,6 +287,7 @@ def main():
         wall = time.perf_counter() - t0
         row = {
             "request_id": i,
+            "subset": ex.get("dataset"),
             "instruction": ex["instruction"],
             "prompt_tokens": int(inputs.shape[1]),
             "total_request_latency": wall,

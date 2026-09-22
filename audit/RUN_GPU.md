@@ -55,7 +55,8 @@ bash audit/run_round0.sh
 (or without activating: `PY=.venv/bin/python bash audit/run_round0.sh`)
 
 Everything it runs must pass **before** a second workload (e.g. SGLang `fork`) is
-worth starting. Override with `N_PRIMARY=50` for a quick pass or `N_FALSIFY=10`.
+worth starting. Override with `N_PRIMARY=50` for a quick pass or `N_FALSIFY=10`; the script then
+strides across all five AlpacaEval subsets rather than sampling only the first.
 The individual stages are documented below.
 
 ## 2b. Smoke test (3 prompts, ~1 min)
@@ -84,15 +85,26 @@ Resumable: re-running the same command skips `request_id`s already in the file.
 
 ### Multi-GPU sharding (optional)
 
+Shard by **stride**, not by contiguous ranges:
+
 ```bash
 for g in 0 1 2 3; do
   CUDA_VISIBLE_DEVICES=$g python audit/pd_audit.py --mode plan \
-    --start $((g*202)) --num_samples 202 \
+    --start $g --stride 4 \
     --out audit/results/plan_default.part$g.jsonl &
 done; wait
 ```
 
-`analyze.py` takes multiple files, so pass all four shards to it.
+`alpaca_eval.json` is stored **ordered by subset** — helpful_base 0-128,
+koala 129-284, oasst 285-472, selfinstruct 473-724, vicuna 725-804 — so
+contiguous shards each see one or two subsets. That is harmless once all shards
+are merged, but it means a shard that dies, or a run you stop early, leaves a
+badly skewed sample. Stride sharding keeps every shard proportional, so partial
+results stay interpretable. Same reason `--stride` exists for single-GPU partial
+runs; `run_round0.sh` sets it automatically when `N_PRIMARY` is given.
+
+`analyze.py` takes multiple files, so pass all four shards to it. It also prints
+a per-subset table, which doubles as a coverage check.
 
 ## 4. Apply the preregistered decision rule
 
