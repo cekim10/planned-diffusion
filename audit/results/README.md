@@ -101,3 +101,28 @@ no verdict changes — but it was wrong as a statement about GPU time, twice ove
 
 The structural compute headroom of span-level over request-level packing on
 this workload is **~18% (all requests) to ~21% (forked requests)**, not 40%.
+
+## Round 2 — runtime-revealed lifetimes? (`../PREREGISTRATION_R2.md`)
+
+Files: `r2_control_sr{0.5,0.25}.jsonl` (pd_entropy), `r2_ct0.9_sr{0.5,0.25}.jsonl`
+(confidence threshold 0.9), 40 strided prompts each, per-step per-block mask
+trajectories. `analysis_round2_sr*.txt` were regenerated locally after fixing a
+tie-handling bug in the rank correlation; the GPU-produced originals are kept as
+`*_GPU_ORIGINAL_tiebug.txt`. Both computed from the same jsonl.
+
+| | sr 0.5 (primary) | sr 0.25 |
+|---|---|---|
+| control finish rule | `min(l_k, og_steps)` 239/239 | 254/254 |
+| σ_sib treatment / control | 0.019 / 0.000 | 0.087 / 0.000 |
+| ρ(l_k, finish) treatment / control | 0.822 / 0.906 | 0.538 / 0.812 |
+| CT shift in steps: 0 / 1 / 2 / ≥3 | 68 / 28 / 3 / 0 % (max 3) | 56 / 27 / 15 / 3 % (max 5) |
+| online ρ, flat across the round | 0.816 | ~0.35 |
+| **verdict (rule as written)** | **GRAY** | DYNAMIC |
+
+The GPU output printed DYNAMIC at sr 0.5 on ρ = 0.700 exactly; that value was
+an artifact of position-broken ties. Corrected ρ is 0.822 → GRAY.
+
+Confidence gating moves span finish by 1–2 denoising steps (5–8% of a round),
+only for spans with `l_k ≥ og_steps`, and in a way the online estimator cannot
+anticipate. Assessment: close PD as the lead workload for runtime-revealed DAG
+scheduling; keep it as the supporting workload for the static ~18% result.

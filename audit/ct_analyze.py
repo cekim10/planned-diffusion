@@ -15,11 +15,30 @@ import argparse, json
 import numpy as np
 
 
+def rankdata(a):
+    """Average ranks for ties (scipy.stats.rankdata(method='average') without scipy).
+    argsort().argsort() breaks ties by position, which turns a block of spans that
+    finish on the same step into an arbitrary ordering and makes rho noise."""
+    a = np.asarray(a, float)
+    order = a.argsort(kind="stable")
+    ranks = np.empty(len(a), float)
+    i = 0
+    while i < len(a):
+        j = i
+        while j + 1 < len(a) and a[order[j + 1]] == a[order[i]]:
+            j += 1
+        ranks[order[i:j + 1]] = (i + j) / 2.0 + 1.0
+        i = j + 1
+    return ranks
+
+
 def spearman(a, b):
     a, b = np.asarray(a, float), np.asarray(b, float)
     if len(a) < 2 or a.std() == 0 or b.std() == 0:
         return np.nan
-    ra = a.argsort().argsort(); rb = b.argsort().argsort()
+    ra, rb = rankdata(a), rankdata(b)
+    if ra.std() == 0 or rb.std() == 0:
+        return np.nan
     return np.corrcoef(ra, rb)[0, 1]
 
 
@@ -101,8 +120,8 @@ def q4_predictability(rounds, sr, grid=(0.0, 0.1, 0.25, 0.5, 0.75)):
             rem = T[s]; done = T[0] - rem
             rate = np.where(done > 0, done / s, np.nan)
             est = s + rem / rate
-            est = np.where(rem == 0, np.minimum(est, s), est)     # already finished
             est = np.where(np.isnan(est), l * sr, est)             # no progress yet -> plan
+            est = np.where(rem == 0, f, est)                       # finished: its step is known online
             online[g].append(spearman(est, f))
     L_all = np.concatenate(L_all); F_all = np.concatenate(F_all)
     if F_all.std() == 0 or L_all.std() == 0:

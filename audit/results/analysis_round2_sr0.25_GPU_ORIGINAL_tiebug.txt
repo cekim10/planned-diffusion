@@ -1,0 +1,42 @@
+
+=== TREATMENT  [audit/results/r2_ct0.9_sr0.25.jsonl] ===
+alg=pd_confidence_threshold thr=0.9  steps_ratio=0.25  rounds=89 (forked 48)  spans=233
+
+1. lifetime ratio finish_k / (l_k * steps_ratio)   [static => 1.000 for all]
+   median 1.133  p10 0.960  p90 2.800  CV 0.540  spans off the static value: 87%
+
+2. siblings with identical l_k inside one round   [static => spread 0]
+   22 groups / 80 spans: relative spread median 0.087  p90 0.252   groups with identical finish: 27%
+
+3. stagger within a round  (max-min)/max of finish steps
+   median 0.091  p90 0.383   distinct finish steps / k: median 0.50
+
+4. predictability of finish
+   from the plan alone: pooled R2(finish | l_k) = 0.550  residual/mean = 0.311  slope 0.209
+   within-round rank corr(l_k, finish): median 0.748  p25 0.023   (n=48)
+   online rank corr(estimated finish, true finish) at fraction of round elapsed:
+     s=0.00: 0.393  s=0.10: 0.393  s=0.25: 0.364  s=0.50: 0.387  s=0.75: 0.400
+
+=== CONTROL  [audit/results/r2_control_sr0.25.jsonl] ===
+alg=pd_entropy  steps_ratio=0.25  rounds=90 (forked 51)  spans=254
+
+1. lifetime ratio finish_k / (l_k * steps_ratio)   [static => 1.000 for all]
+   median 1.050  p10 0.933  p90 2.710  CV 0.563  spans off the static value: 76%
+
+2. siblings with identical l_k inside one round   [static => spread 0]
+   33 groups / 98 spans: relative spread median 0.000  p90 0.000   groups with identical finish: 100%
+
+3. stagger within a round  (max-min)/max of finish steps
+   median 0.000  p90 0.333   distinct finish steps / k: median 0.40
+
+4. predictability of finish
+   from the plan alone: pooled R2(finish | l_k) = 0.534  residual/mean = 0.328  slope 0.207
+   within-round rank corr(l_k, finish): median 0.991  p25 0.750   (n=51)
+   online rank corr(estimated finish, true finish) at fraction of round elapsed:
+     s=0.00: 0.750  s=0.10: 0.750  s=0.25: 0.750  s=0.50: 0.750  s=0.75: 0.750
+
+--- preregistered rule (PREREGISTRATION_R2.md) ---
+sibling relative spread (median) = 0.087   within-round rho(l,finish) = 0.748   lifetime-ratio CV = 0.540   R2(finish|l) = 0.550
+control: sibling spread 0.000  CV 0.563  (control must be ~0 / ~0 for the treatment numbers to mean anything)
+VERDICT: GRAY 
+

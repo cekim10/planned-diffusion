@@ -1,0 +1,42 @@
+
+=== TREATMENT  [audit/results/r2_ct0.9_sr0.5.jsonl] ===
+alg=pd_confidence_threshold thr=0.9  steps_ratio=0.5  rounds=88 (forked 48)  spans=229
+
+1. lifetime ratio finish_k / (l_k * steps_ratio)   [static => 1.000 for all]
+   median 1.100  p10 1.000  p90 2.000  CV 0.288  spans off the static value: 68%
+
+2. siblings with identical l_k inside one round   [static => spread 0]
+   27 groups / 80 spans: relative spread median 0.019  p90 0.097   groups with identical finish: 44%
+
+3. stagger within a round  (max-min)/max of finish steps
+   median 0.048  p90 0.631   distinct finish steps / k: median 0.50
+
+4. predictability of finish
+   from the plan alone: pooled R2(finish | l_k) = 0.880  residual/mean = 0.253  slope 0.516
+   within-round rank corr(l_k, finish): median 0.700  p25 0.413   (n=48)
+   online rank corr(estimated finish, true finish) at fraction of round elapsed:
+     s=0.00: 0.800  s=0.10: 0.800  s=0.25: 0.800  s=0.50: 0.800  s=0.75: 0.775
+
+=== CONTROL  [audit/results/r2_control_sr0.5.jsonl] ===
+alg=pd_entropy  steps_ratio=0.5  rounds=82 (forked 46)  spans=239
+
+1. lifetime ratio finish_k / (l_k * steps_ratio)   [static => 1.000 for all]
+   median 1.143  p10 1.000  p90 2.000  CV 0.300  spans off the static value: 52%
+
+2. siblings with identical l_k inside one round   [static => spread 0]
+   25 groups / 85 spans: relative spread median 0.000  p90 0.000   groups with identical finish: 100%
+
+3. stagger within a round  (max-min)/max of finish steps
+   median 0.000  p90 0.714   distinct finish steps / k: median 0.50
+
+4. predictability of finish
+   from the plan alone: pooled R2(finish | l_k) = 0.744  residual/mean = 0.233  slope 0.477
+   within-round rank corr(l_k, finish): median 1.000  p25 0.895   (n=46)
+   online rank corr(estimated finish, true finish) at fraction of round elapsed:
+     s=0.00: 1.000  s=0.10: 1.000  s=0.25: 0.900  s=0.50: 0.845  s=0.75: 0.827
+
+--- preregistered rule (PREREGISTRATION_R2.md) ---
+sibling relative spread (median) = 0.019   within-round rho(l,finish) = 0.700   lifetime-ratio CV = 0.288   R2(finish|l) = 0.880
+control: sibling spread 0.000  CV 0.300  (control must be ~0 / ~0 for the treatment numbers to mean anything)
+VERDICT: DYNAMIC -- lifetimes are runtime-revealed; Round 3 = oracle-vs-online gap 
+
