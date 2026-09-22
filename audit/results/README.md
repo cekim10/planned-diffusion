@@ -126,3 +126,35 @@ Confidence gating moves span finish by 1–2 denoising steps (5–8% of a round)
 only for spans with `l_k ≥ og_steps`, and in a way the online estimator cannot
 anticipate. Assessment: close PD as the lead workload for runtime-revealed DAG
 scheduling; keep it as the supporting workload for the static ~18% result.
+
+## Round 3 — does knowing the chain help a strong scheduler? (`../PREREGISTRATION_R3.md`)
+
+No GPU. Iteration-level batching simulator (`../chain_sim.py`) on the 106 chained
+requests, iteration time from `fwd_curve.json`. Files: `analysis_round3.txt`,
+`chain_sim.json`. Capacity ≈ 1.2 req/s; operating window = `fcfs` P99 within
+1.5–4× its unloaded value (11.8 s at sr 0.5 → 18–47 s).
+
+Primary cell (sr 0.5, B 1024), best oracle P99 gain over Sangam-like FCFS in the
+window: **9.6%**. Chain-blind size-aware ordering beats the clairvoyant chain
+oracle at every load (chain value −2 to −18 points). Critical-path-first is
+catastrophic (−7% to −144%). Same pattern in every `(sr, B)`.
+
+**VERDICT: KILL.** Planned Diffusion scheduling is closed after four preregistered
+tests (compaction, static span scheduling, CT dynamic scheduling, chain-aware
+scheduling).
+
+## What the PD track established (keep)
+
+- Spans have exact natural retirement points: `finish_k = min(l_k, og_steps)`,
+  493/493 spans (R0 + R2 controls).
+- 60% of requests are multi-round; the execution graph is series-parallel,
+  materializing one round at a time; 53% of diffusion work is invisible at admission.
+- At the paper's speed settings, 35–54% of request latency is the AR planner
+  running at ~32% of GPU peak (uncached path).
+- Static span-level packing is worth ~18% over perfect request-level batching;
+  compaction alone ~4% latency; 93% of the gap to ideal is request-level batching.
+- Confidence-threshold decoding moves span finish by 1–2 steps, only for spans
+  with `l_k ≥ og_steps`, not learnable mid-round.
+- Runaway AR after `<sync>` in 3/19 cases (70% of sample planning time) — a
+  runtime robustness hole.
+- Chain knowledge has no marginal scheduling value over region-size awareness.

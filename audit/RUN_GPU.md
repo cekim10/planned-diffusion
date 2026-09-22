@@ -235,6 +235,15 @@ through that curve and prints `T_current / T_compact / T_packedCB / T_ideal`,
 and the verdict. Shrink the grid with `GRID=64,128,256,512,1024,2048` if short on
 time; the top end matters (it sets `thr_sat`).
 
+## Round 3 — chain-aware oracle vs Sangam-like scheduler (no GPU)
+
+```bash
+python audit/chain_sim.py --out audit/results/chain_sim.json | tee audit/results/analysis_round3.txt
+```
+
+Runs entirely from `fwd_curve.json` and the Round 0/2 traces. Result recorded in
+`PREREGISTRATION_R3.md`: KILL; the PD scheduling track is closed.
+
 ## What to send back
 
 - `audit/results/*.jsonl`

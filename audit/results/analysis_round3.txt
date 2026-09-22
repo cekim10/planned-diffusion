@@ -1,0 +1,75 @@
+templates: 106  rounds/template mean 2.22
+
+=== steps_ratio=0.5   solo request mean latency 3.14s ===
+
+  B=512
+   rate  contend  waited |        fcfs  sjf_region  srpt_chain  lrpt_chain |  gain vs fcfs (p99): sjf_region srpt_chain lrpt_chain
+   0.30     9.9%   14.6% |    17.17s      15.65s      16.07s      19.48s   |     +8.9%      +6.4%     -13.4%    <- fcfs p99 is 5.5x solo
+   0.40    15.5%   22.2% |    21.09s      17.70s      19.11s      27.84s   |    +16.1%      +9.4%     -32.0%    <- fcfs p99 is 6.7x solo
+   0.50    23.4%   31.9% |    25.99s      21.91s      24.40s      55.72s   |    +15.7%      +6.1%    -114.3%    <- fcfs p99 is 8.3x solo
+   0.60    34.9%   44.2% |    35.52s      29.11s      29.28s      86.12s   |    +18.1%     +17.6%    -142.4%    <- fcfs p99 is 11.3x solo
+   0.70    50.7%   59.4% |    48.39s      41.15s      47.72s     144.39s   |    +15.0%      +1.4%    -198.4%    <- fcfs p99 is 15.4x solo
+   0.80    73.1%   79.5% |    71.60s     109.71s      83.61s     272.18s   |    -53.2%     -16.8%    -280.1%    <- fcfs p99 is 22.8x solo
+   0.90    94.8%   96.0% |   228.22s     527.41s     527.73s     OVERLOAD  |   -131.1%    -131.2%         n/a    <- fcfs p99 is 72.6x solo
+   1.00    96.9%   97.4% |   588.72s    1070.23s    1056.03s     OVERLOAD  |    -81.8%     -79.4%         n/a    <- fcfs p99 is 187.3x solo
+
+  B=1024
+   rate  contend  waited |        fcfs  sjf_region  srpt_chain  lrpt_chain |  gain vs fcfs (p99): sjf_region srpt_chain lrpt_chain
+   0.30     0.7%    1.5% |    14.95s      14.49s      14.89s      15.05s   |     +3.0%      +0.4%      -0.7%    <- fcfs p99 is 4.8x solo
+   0.40     1.5%    3.1% |    16.72s      15.73s      15.79s      16.87s   |     +5.9%      +5.5%      -0.9%    <- fcfs p99 is 5.3x solo
+   0.50     3.0%    6.5% |    19.65s      17.31s      17.76s      21.03s   |    +11.9%      +9.6%      -7.1%    <- fcfs p99 is 6.2x solo
+   0.60     5.7%   11.1% |    23.75s      21.81s      22.73s      36.97s   |     +8.2%      +4.3%     -55.6%    <- fcfs p99 is 7.6x solo
+   0.70    10.0%   18.3% |    29.93s      24.07s      29.35s      60.08s   |    +19.6%      +1.9%    -100.7%    <- fcfs p99 is 9.5x solo
+   0.80    19.1%   30.7% |    38.38s      32.05s      37.79s      93.51s   |    +16.5%      +1.5%    -143.6%    <- fcfs p99 is 12.2x solo
+   0.90    36.5%   49.6% |    52.45s      40.64s      49.92s     139.30s   |    +22.5%      +4.8%    -165.6%    <- fcfs p99 is 16.7x solo
+   1.00    68.2%   77.3% |    82.52s      97.57s      94.57s     540.05s   |    -18.2%     -14.6%    -554.4%    <- fcfs p99 is 26.3x solo
+
+  B=2048
+   rate  contend  waited |        fcfs  sjf_region  srpt_chain  lrpt_chain |  gain vs fcfs (p99): sjf_region srpt_chain lrpt_chain
+   0.30     0.0%    0.0% |    14.93s      14.93s      14.93s      14.93s   |     +0.0%      +0.0%      +0.0%    <- fcfs p99 is 4.8x solo
+   0.40     0.0%    0.0% |    16.57s      16.57s      16.57s      16.57s   |     -0.0%      -0.0%      +0.0%    <- fcfs p99 is 5.3x solo
+   0.50     0.0%    0.2% |    19.10s      19.10s      19.10s      19.15s   |     +0.0%      +0.0%      -0.3%    <- fcfs p99 is 6.1x solo
+   0.60     0.2%    0.9% |    24.37s      23.95s      23.74s      24.24s   |     +1.7%      +2.6%      +0.5%    <- fcfs p99 is 7.8x solo
+   0.70     0.7%    2.9% |    30.08s      29.51s      29.89s      35.39s   |     +1.9%      +0.6%     -17.6%    <- fcfs p99 is 9.6x solo
+   0.80     1.7%    5.5% |    36.30s      34.88s      36.01s      58.33s   |     +3.9%      +0.8%     -60.7%    <- fcfs p99 is 11.5x solo
+   0.90     5.5%   13.6% |    51.25s      45.09s      47.76s      87.89s   |    +12.0%      +6.8%     -71.5%    <- fcfs p99 is 16.3x solo
+   1.00    25.4%   41.4% |    71.70s      66.02s      81.20s     200.06s   |     +7.9%     -13.2%    -179.0%    <- fcfs p99 is 22.8x solo
+
+=== steps_ratio=1.0   solo request mean latency 4.94s ===
+
+  B=512
+   rate  contend  waited |        fcfs  sjf_region  srpt_chain  lrpt_chain |  gain vs fcfs (p99): sjf_region srpt_chain lrpt_chain
+   0.30    27.0%   35.1% |    55.88s      40.40s      47.54s     123.87s   |    +27.7%     +14.9%    -121.7%    <- fcfs p99 is 11.3x solo
+   0.40    51.3%   59.0% |    91.77s      79.89s      76.52s     257.97s   |    +12.9%     +16.6%    -181.1%    <- fcfs p99 is 18.6x solo
+   0.50    92.8%   94.4% |   270.35s     493.85s     664.65s     OVERLOAD  |    -82.7%    -145.9%         n/a    <- fcfs p99 is 54.7x solo
+   0.60    97.7%   97.9% |  1186.98s    1978.51s    2002.06s     OVERLOAD  |    -66.7%     -68.7%         n/a    <- fcfs p99 is 240.1x solo
+/Users/cekim/Desktop/git/planned-diffusion/audit/chain_sim.py:193: RuntimeWarning: invalid value encountered in scalar divide
+  gains = {p: 1 - res[p]["p99"] / f["p99"] for p in policies[1:]}
+   0.70    98.4%   82.1% |   OVERLOAD   2089.86s    2243.99s     OVERLOAD  |   +100.0%    +100.0%         n/a 
+   0.80    98.4%   76.7% |   OVERLOAD   2119.56s    2279.25s     OVERLOAD  |   +100.0%    +100.0%         n/a 
+   0.90    98.3%   71.0% |   OVERLOAD   2143.60s    2321.64s     OVERLOAD  |   +100.0%    +100.0%         n/a 
+   1.00    98.2%   66.7% |   OVERLOAD   2165.41s    2353.54s     OVERLOAD  |   +100.0%    +100.0%         n/a 
+
+  B=1024
+   rate  contend  waited |        fcfs  sjf_region  srpt_chain  lrpt_chain |  gain vs fcfs (p99): sjf_region srpt_chain lrpt_chain
+   0.30     3.9%    7.6% |    36.35s      32.92s      35.44s      43.48s   |     +9.4%      +2.5%     -19.6%    <- fcfs p99 is 7.4x solo
+   0.40    10.1%   18.0% |    53.43s      43.91s      53.32s     109.69s   |    +17.8%      +0.2%    -105.3%    <- fcfs p99 is 10.8x solo
+   0.50    28.1%   41.3% |    82.82s      71.39s      75.31s     211.12s   |    +13.8%      +9.1%    -154.9%    <- fcfs p99 is 16.8x solo
+   0.60    78.8%   85.1% |   206.43s     220.00s     217.06s     OVERLOAD  |     -6.6%      -5.1%         n/a    <- fcfs p99 is 41.8x solo
+   0.70    92.8%   95.4% |   857.83s    1039.12s    1398.40s     OVERLOAD  |    -21.1%     -63.0%         n/a    <- fcfs p99 is 173.5x solo
+   0.80    94.3%   88.9% |   OVERLOAD   1587.69s    1793.13s     OVERLOAD  |   +100.0%    +100.0%         n/a 
+   0.90    95.4%   79.0% |   OVERLOAD   1664.57s    1825.75s     OVERLOAD  |   +100.0%    +100.0%         n/a 
+   1.00    95.5%   75.0% |   OVERLOAD   1702.84s    1854.65s     OVERLOAD  |   +100.0%    +100.0%         n/a 
+
+  B=2048
+   rate  contend  waited |        fcfs  sjf_region  srpt_chain  lrpt_chain |  gain vs fcfs (p99): sjf_region srpt_chain lrpt_chain
+   0.30     0.1%    0.3% |    34.68s      34.65s      34.59s      34.69s   |     +0.1%      +0.3%      -0.0%    <- fcfs p99 is 7.0x solo
+   0.40     0.8%    3.3% |    57.32s      53.32s      55.30s      73.54s   |     +7.0%      +3.5%     -28.3%    <- fcfs p99 is 11.6x solo
+   0.50     4.5%   13.0% |    78.65s      77.25s      79.63s     127.73s   |     +1.8%      -1.2%     -62.4%    <- fcfs p99 is 15.9x solo
+   0.60    38.9%   58.7% |   163.69s     184.69s     194.14s     887.85s   |    -12.8%     -18.6%    -442.4%    <- fcfs p99 is 33.1x solo
+   0.70    81.7%   91.5% |   788.32s     910.49s    1186.62s     OVERLOAD  |    -15.5%     -50.5%         n/a    <- fcfs p99 is 159.5x solo
+   0.80    85.4%   86.0% |   OVERLOAD   1568.18s    1682.56s     OVERLOAD  |   +100.0%    +100.0%         n/a 
+   0.90    85.6%   75.6% |   OVERLOAD   1657.62s    1857.43s     OVERLOAD  |   +100.0%    +100.0%         n/a 
+   1.00    87.0%   73.0% |   OVERLOAD   1706.46s    1866.97s     OVERLOAD  |   +100.0%    +100.0%         n/a 
+
+wrote audit/results/chain_sim.json
