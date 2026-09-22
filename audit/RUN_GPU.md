@@ -133,28 +133,22 @@ each block unmasks one token per step and finishes at its declared length; the
 region runs to `max_k l_k` and finished spans stay resident). If INVALID, the
 length-derived metric does not describe the run — report that and stop.
 
-## 5b. SECOND AXIS — confidence-threshold decoding (20 prompts)
+## 5b. SECOND AXIS — is span lifetime runtime-revealed? (Round 2)
 
-`block_unmask_confidence_threshold` (`dream/pd_utils.py`) keeps **per-block** state
-(`left_tokens_last_step_per_block`) and defers low-confidence tokens block by block,
-extending `steps` to cover the slowest one. So unlike `pd_entropy`, per-span work is
-**data-dependent** and spans genuinely retire at different steps.
+**Do not run `--confidence_threshold` at the default `steps_ratio=1.0`: it is a
+no-op there** (base budget is 1 token/step and the top-1 always transfers, so the
+threshold is never consulted — verified by driving `block_unmask_confidence_threshold`
+directly; see `PREREGISTRATION_R2.md`). The experiment runs at `steps_ratio < 1`
+with a `pd_entropy` control at the same ratio.
 
 ```bash
-python audit/pd_audit.py --mode full --num_samples 20 --confidence_threshold 0.9 \
-  --out audit/results/full_ct20.jsonl
-python audit/analyze.py audit/results/full_ct20.jsonl --label "confidence threshold 0.9"
+bash audit/run_round2.sh
 ```
 
-Here early retirement is **expected**, and `analyze.py` reports a *measured*
-join waste from the observed finish steps rather than one derived from lengths.
-This is the evidence that span work is not predictable from the declared `l_k`,
-which is a different claim from step 4 and a stronger one.
-
-> Expect this to be **much slower per prompt** than `pd_entropy`:
-> `block_unmask_confidence_threshold` has a Python loop over the selected tokens
-> with a `selected_confidence[k] < threshold` test, i.e. a device->host sync per
-> candidate token per block per step. Start with 20 prompts and measure.
+Four full-generation runs of 40 strided prompts (control/treatment at
+`steps_ratio` 0.5 and 0.25), then `ct_analyze.py` on each pair. Primary verdict is
+the 0.5 pair. `N=20` for a quick pass; the sibling-variance test needs forked
+rounds with repeated `l_k`, so fewer than ~30 prompts is likely INCONCLUSIVE.
 
 ## 6. Sensitivity — `length_scale` (report only, never primary)
 
@@ -248,6 +242,7 @@ time; the top end matters (it sets `thr_sat`).
 - the `VERDICT` line from step 4
 - the `VALID/INVALID` line from step 5, and the measured spread from 5b
 - Round 1: `audit/results/fwd_curve.json` and `analysis_round1.txt`
+- Round 2: `audit/results/r2_*.jsonl` and `analysis_round2_sr*.txt`
 
 ## Implementation notes (why the instrumentation looks the way it does)
 

@@ -163,6 +163,15 @@ Stated-in-advance expectation confirmed: `S_compact` small, case rests on `H`.
   CT, the value of *dynamic* span scheduling is not captured by `H` at all.
   That is the one measurement inside this repo that could change the character
   of the result rather than its magnitude.
+- **`steps_ratio` caveat (found while preparing Round 2).** Every Round 0–1
+  number is at `steps_ratio = 1`. Driving `block_unmask` directly shows that at
+  `steps_ratio < 1` — the paper's speed settings — `pd_entropy` transfers
+  `l_k / steps` tokens per block per step and **every span finishes on the same
+  step**. The `finish_k = l_k` stagger is the `max(1, …)` floor at ratio 1. So
+  the static span-retirement opportunity measured here (`H = 0.177`) exists
+  only at the slowest setting; at speed it is zero for the default algorithm,
+  and any retirement heterogeneity must come from the confidence threshold
+  (Round 2). This narrows Rounds 0–1 further than their verdicts alone imply.
 - L40S specifics: `H` is a ratio at saturation and is GPU-independent; the
   floor and `L_sat` move with memory bandwidth, so `S_compact` would be a few
   points higher on an A100/H100 but the regime is the same.
